@@ -191,6 +191,7 @@
 
 - (void)stopRoll
 {
+    NSLog(@"[Rolling] -> stopRoll");
     if (_timer) {
         [_timer invalidate];
         _timer = nil;
@@ -208,6 +209,7 @@
 
 - (void)pause
 {
+    NSLog(@"[Rolling] -> pause");
     if (_timer) {
         [_timer setFireDate:[NSDate distantFuture]];
         _status = GYRollingNoticeViewStatusPause;
@@ -215,6 +217,7 @@
 }
 - (void)resume
 {
+    NSLog(@"[Rolling] -> resume");
     if (_timer) {
         [_timer setFireDate:[NSDate distantPast]];
         _status = GYRollingNoticeViewStatusWorking;
@@ -223,8 +226,8 @@
 
 - (void)timerHandle
 {
-//    NSLog(@"-----------------------------------");
-    
+    NSLog(@"[Rolling] -> timerHandle");
+
     if (self.isAnimating) return;
     
     [self layoutCurrentCellAndWillShowCell];
@@ -235,24 +238,30 @@
     
     self.isAnimating = YES;
     
-    kGYNotiWeakSelf(self);
+    __weak typeof(self) weakify = self;
     [UIView animateWithDuration:0.5 animations:^{
-        kGYNotiStrongSelf(self);
-        
-        self.currentCell.frame = CGRectMake(0, -h, w, h);
-        self.willShowCell.frame = CGRectMake(0, 0, w, h);
-    } completion:^(BOOL finished) {
-        kGYNotiStrongSelf(self);
-        
-        // fixed bug: reload data when animate running
-        if (self.currentCell && self.willShowCell) {
-            [self.reuseCells addObject:self.currentCell];
-            [self.currentCell removeFromSuperview];
-            self.currentCell = self.willShowCell;
+        __strong typeof(weakify) strongify = weakify;
+        if(strongify)
+        {
+            strongify.currentCell.frame = CGRectMake(0, -h, w, h);
+            strongify.willShowCell.frame = CGRectMake(0, 0, w, h);
         }
-        self.isAnimating = NO;
-        
-        self -> _cIdx ++;
+    } completion:^(BOOL finished) {
+        __strong typeof(weakify) strongify = weakify;
+        if(strongify)
+        {
+            // fixed bug: reload data when animate running
+            if (strongify.currentCell && strongify.willShowCell) {
+                [strongify.reuseCells addObject:strongify.currentCell];
+                [strongify.currentCell removeFromSuperview];
+                strongify.currentCell = strongify.willShowCell;
+            }
+            strongify.isAnimating = NO;
+            
+            strongify -> _cIdx ++;
+        }else{
+            NSLog(@"[Rolling] -> 释放了");
+        }
     }];
 }
 
